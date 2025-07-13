@@ -294,7 +294,7 @@ async function handleOtherSections(interaction, game, section, action) {
       });
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed], components: [] });
 }
 
 export async function handleInteraction(interaction) {
@@ -458,9 +458,9 @@ async function handleSectionAction(interaction, game, section, action) {
   try {
     if (section === 'characters') {
       if (action === 'random') {
-        await handleRandomCharacter(interaction, game);
+        await handleRandomCharacterButton(interaction, game);
       } else if (action === 'list') {
-        await handleListCharacters(interaction, game);
+        await handleListCharactersButton(interaction, game);
       } else if (action === 'search') {
         // For search, we'll prompt user to use a follow-up
         const embed = new EmbedBuilder()
@@ -480,6 +480,114 @@ async function handleSectionAction(interaction, game, section, action) {
       content: '❌ An error occurred while processing your request.', 
       components: [] 
     });
+  }
+}
+
+async function handleRandomCharacterButton(interaction, game) {
+  try {
+    let characters = await dataFetcher.getAllCharacters(game);
+
+    if (characters.length === 0) {
+      await interaction.editReply({ content: '❌ No characters found.', components: [] });
+      return;
+    }
+
+    const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+
+    const embed = new EmbedBuilder()
+      .setTitle(`🎲 Random Character: ${randomCharacter.name}`)
+      .setColor(getRarityColor(randomCharacter.rarity))
+      .addFields(
+        { name: '⭐ Rarity', value: randomCharacter.rarity || 'Unknown', inline: true },
+        { name: '🔥 Element', value: randomCharacter.element || 'Unknown', inline: true },
+        { name: '⚔️ Role', value: randomCharacter.role || 'Unknown', inline: true }
+      );
+
+    if (randomCharacter.stats) {
+      const statsText = [
+        `❤️ HP: ${randomCharacter.stats.hp || 'N/A'}`,
+        `⚔️ Attack: ${randomCharacter.stats.attack || 'N/A'}`,
+        `🛡️ Defense: ${randomCharacter.stats.defense || 'N/A'}`
+      ].join('\n');
+      embed.addFields({ name: '📊 Base Stats', value: statsText, inline: false });
+    }
+
+    if (randomCharacter.image) {
+      embed.setThumbnail(`https://gachawiki.info${randomCharacter.image}`);
+    }
+
+    if (randomCharacter.detailUrl) {
+      embed.addFields({ 
+        name: '🔗 Full Guide', 
+        value: `[View on GachaWiki](https://gachawiki.info${randomCharacter.detailUrl})`,
+        inline: false 
+      });
+    }
+
+    embed.setFooter({ text: `From ${characters.length} characters • ${getGameDisplayName(game)} • gachawiki.info` });
+
+    await interaction.editReply({ embeds: [embed], components: [] });
+    
+  } catch (error) {
+    console.error('Error in random character button:', error);
+    await interaction.editReply({ content: '❌ An error occurred while fetching character data.', components: [] });
+  }
+}
+
+async function handleListCharactersButton(interaction, game) {
+  try {
+    let characters = await dataFetcher.getAllCharacters(game);
+
+    if (characters.length === 0) {
+      await interaction.editReply({ content: '❌ No characters found.', components: [] });
+      return;
+    }
+
+    characters.sort((a, b) => a.name.localeCompare(b.name));
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📋 ${getGameDisplayName(game)} Characters`)
+      .setColor(0x00ACC1)
+      .setDescription(`**Total:** ${characters.length} characters`);
+
+    const groupedByRarity = characters.reduce((acc, char) => {
+      const rarity = char.rarity || 'Unknown';
+      if (!acc[rarity]) acc[rarity] = [];
+      acc[rarity].push(char);
+      return acc;
+    }, {});
+
+    const rarityOrder = ['SSR', 'SR', 'R', 'N', 'Unknown'];
+    
+    for (const rarity of rarityOrder) {
+      if (groupedByRarity[rarity]) {
+        const charNames = groupedByRarity[rarity]
+          .map(char => char.name)
+          .join(' • ');
+        
+        const rarityEmoji = {
+          'SSR': '🌟',
+          'SR': '⭐',
+          'R': '✨',
+          'N': '💫',
+          'Unknown': '❓'
+        };
+
+        embed.addFields({
+          name: `${rarityEmoji[rarity]} ${rarity} (${groupedByRarity[rarity].length})`,
+          value: charNames.length > 1024 ? charNames.substring(0, 1021) + '...' : charNames,
+          inline: false
+        });
+      }
+    }
+
+    embed.setFooter({ text: `Use /character ${game} [name] for details • gachawiki.info` });
+
+    await interaction.editReply({ embeds: [embed], components: [] });
+    
+  } catch (error) {
+    console.error('Error in list characters button:', error);
+    await interaction.editReply({ content: '❌ An error occurred while fetching character data.', components: [] });
   }
 }
 
