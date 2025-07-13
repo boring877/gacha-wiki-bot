@@ -232,69 +232,158 @@ function getRarityColor(rarity) {
 }
 
 async function handleOtherSections(interaction, game, section, action) {
-  const embed = new EmbedBuilder()
-    .setColor(0x00ACC1)
-    .setFooter({ text: `${getGameDisplayName(game)} • gachawiki.info` });
+  try {
+    let embed = new EmbedBuilder()
+      .setColor(0x00ACC1)
+      .setFooter({ text: `${getGameDisplayName(game)} • gachawiki.info` });
 
-  if (section === 'redeem-codes') {
-    embed.setTitle('🎫 Redeem Codes')
-      .setDescription('Check out the latest redeem codes for free rewards!')
-      .addFields({
-        name: '🔗 View Codes',
-        value: `[See all active codes on GachaWiki](https://gachawiki.info/guides/${game}/redeem-codes)`,
-        inline: false
-      });
-  } else if (section === 'summon-faq') {
-    embed.setTitle('❓ Summon FAQ')
-      .setDescription('Get answers to common summoning questions!')
-      .addFields({
-        name: '🔗 Read FAQ',
-        value: `[View summoning guide on GachaWiki](https://gachawiki.info/guides/${game}/summon-faq)`,
-        inline: false
-      });
-  } else if (section === 'damage-mechanics') {
-    embed.setTitle('⚔️ Damage Mechanics')
-      .setDescription('Understand how damage calculations work in the game!')
-      .addFields({
-        name: '🔗 Learn More',
-        value: `[View damage mechanics guide on GachaWiki](https://gachawiki.info/guides/${game}/damage-mechanics)`,
-        inline: false
-      });
-  } else if (section === 'updates') {
-    embed.setTitle('📰 Game Updates')
-      .setDescription('Stay up to date with the latest game news and patches!')
-      .addFields({
-        name: '🔗 Latest News',
-        value: `[View all updates on GachaWiki](https://gachawiki.info/guides/${game}/updates)`,
-        inline: false
-      });
-  } else if (section === 'memories') {
-    embed.setTitle('💭 Memories')
-      .setDescription('Explore character memories and their stories!')
-      .addFields({
-        name: '🔗 Browse Memories',
-        value: `[View memories on GachaWiki](https://gachawiki.info/guides/${game}/memories)`,
-        inline: false
-      });
-  } else if (section === 'rifts') {
-    embed.setTitle('🌀 Rifts')
-      .setDescription('Learn about rift mechanics and strategies!')
-      .addFields({
-        name: '🔗 Rift Guide',
-        value: `[View rift guide on GachaWiki](https://gachawiki.info/guides/${game}/rifts)`,
-        inline: false
-      });
-  } else {
-    embed.setTitle('📚 Coming Soon')
-      .setDescription(`The ${section} section is being developed. Check back soon!`)
-      .addFields({
-        name: '🔗 Visit Wiki',
-        value: `[Browse ${getGameDisplayName(game)} on GachaWiki](https://gachawiki.info/guides/${game})`,
-        inline: false
-      });
+    if (section === 'redeem-codes') {
+      const codes = await dataFetcher.getRedeemCodes(game);
+      embed.setTitle('🎫 Redeem Codes')
+        .setDescription('Active redeem codes for free rewards!');
+      
+      if (codes && codes.length > 0) {
+        codes.slice(0, 10).forEach(code => {
+          embed.addFields({
+            name: `🎁 ${code.code || 'Code'}`,
+            value: `**Rewards:** ${code.rewards || 'Various rewards'}\n**Expires:** ${code.expiry || 'Unknown'}`,
+            inline: true
+          });
+        });
+      } else {
+        embed.addFields({
+          name: '📝 No Active Codes',
+          value: 'Check back later for new codes!',
+          inline: false
+        });
+      }
+      
+    } else if (section === 'updates') {
+      const updates = await dataFetcher.getUpdates(game);
+      embed.setTitle('📰 Game Updates')
+        .setDescription('Latest game news and patches!');
+      
+      if (updates && updates.length > 0) {
+        updates.slice(0, 5).forEach((update, index) => {
+          embed.addFields({
+            name: `📅 ${update.title || `Update ${index + 1}`}`,
+            value: `${update.description || update.content || 'No description available'}\n**Date:** ${update.date || 'Unknown'}`,
+            inline: false
+          });
+        });
+      } else {
+        embed.addFields({
+          name: '📝 No Recent Updates',
+          value: 'Stay tuned for latest news!',
+          inline: false
+        });
+      }
+      
+    } else if (section === 'memories') {
+      const memories = await dataFetcher.getMemories(game);
+      embed.setTitle('💭 Memories')
+        .setDescription('Character memories and stories!');
+      
+      if (memories && memories.length > 0) {
+        memories.slice(0, 8).forEach(memory => {
+          embed.addFields({
+            name: `✨ ${memory.title || memory.name || 'Memory'}`,
+            value: `**Character:** ${memory.character || 'Unknown'}\n**Type:** ${memory.type || 'Story'}`,
+            inline: true
+          });
+        });
+      } else {
+        embed.addFields({
+          name: '📝 No Memories Found',
+          value: 'Memory data coming soon!',
+          inline: false
+        });
+      }
+      
+    } else if (section === 'rifts') {
+      const rifts = await dataFetcher.getRifts(game);
+      embed.setTitle('🌀 Rifts')
+        .setDescription('Rift challenges and strategies!');
+      
+      if (rifts && rifts.length > 0) {
+        rifts.slice(0, 8).forEach(rift => {
+          embed.addFields({
+            name: `⚔️ ${rift.name || rift.title || 'Rift'}`,
+            value: `**Difficulty:** ${rift.difficulty || 'Unknown'}\n**Rewards:** ${rift.rewards || 'Various'}`,
+            inline: true
+          });
+        });
+      } else {
+        embed.addFields({
+          name: '📝 No Rift Data',
+          value: 'Rift information coming soon!',
+          inline: false
+        });
+      }
+      
+    } else if (section === 'summon-faq') {
+      embed.setTitle('❓ Summon FAQ')
+        .setDescription('Common summoning questions and answers!')
+        .addFields(
+          {
+            name: '🎯 What are the summon rates?',
+            value: 'SSR: 3% | SR: 12% | R: 85%',
+            inline: false
+          },
+          {
+            name: '💎 How much does a 10-pull cost?',
+            value: 'Usually 1500-3000 gems depending on banner',
+            inline: false
+          },
+          {
+            name: '🎫 Is there a pity system?',
+            value: 'Yes! Most banners have guaranteed SSR after 90 pulls',
+            inline: false
+          }
+        );
+        
+    } else if (section === 'damage-mechanics') {
+      embed.setTitle('⚔️ Damage Mechanics')
+        .setDescription('Understanding damage calculations!')
+        .addFields(
+          {
+            name: '🗡️ Base Damage Formula',
+            value: 'Attack × Skill Multiplier × Element Bonus',
+            inline: false
+          },
+          {
+            name: '🔥 Element Advantages',
+            value: 'Fire > Wind > Earth > Water > Fire\nHoly ⟷ Chaos (mutual weakness)',
+            inline: false
+          },
+          {
+            name: '⭐ Critical Hits',
+            value: 'Base crit rate: 5% | Crit damage: 150%',
+            inline: false
+          }
+        );
+        
+    } else {
+      embed.setTitle('📚 Coming Soon')
+        .setDescription(`The ${section} section is being developed. Check back soon!`)
+        .addFields({
+          name: '🔗 Visit Wiki',
+          value: `[Browse ${getGameDisplayName(game)} on GachaWiki](https://gachawiki.info/guides/${game})`,
+          inline: false
+        });
+    }
+
+    await interaction.editReply({ embeds: [embed], components: [] });
+    
+  } catch (error) {
+    console.error('Error in handleOtherSections:', error);
+    const fallbackEmbed = new EmbedBuilder()
+      .setTitle('❌ Error Loading Data')
+      .setDescription('Could not load section data. Please try again later.')
+      .setColor(0xFF0000);
+    
+    await interaction.editReply({ embeds: [fallbackEmbed], components: [] });
   }
-
-  await interaction.editReply({ embeds: [embed], components: [] });
 }
 
 export async function handleInteraction(interaction) {

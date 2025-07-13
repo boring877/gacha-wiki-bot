@@ -60,6 +60,32 @@ class DataFetcher {
     return this.parseJSModule(jsContent);
   }
 
+  async getGameData(game, dataType) {
+    try {
+      const jsContent = await this.fetchRawFile(`/${game}/${dataType}.js`);
+      return this.parseJSModule(jsContent);
+    } catch (error) {
+      console.error(`Failed to fetch ${dataType} data for ${game}:`, error);
+      return [];
+    }
+  }
+
+  async getRedeemCodes(game) {
+    return await this.getGameData(game, 'redeem-codes');
+  }
+
+  async getUpdates(game) {
+    return await this.getGameData(game, 'updates');
+  }
+
+  async getRifts(game) {
+    return await this.getGameData(game, 'rifts');
+  }
+
+  async getMemories(game) {
+    return await this.getGameData(game, 'memories');
+  }
+
   async findCharacter(name, game = null) {
     const searches = [];
     
