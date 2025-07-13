@@ -232,158 +232,235 @@ function getRarityColor(rarity) {
 }
 
 async function handleOtherSections(interaction, game, section, action) {
-  try {
-    let embed = new EmbedBuilder()
-      .setColor(0x00ACC1)
-      .setFooter({ text: `${getGameDisplayName(game)} • gachawiki.info` });
+  const gameData = getGameContent(game);
+  
+  let embed = new EmbedBuilder()
+    .setColor(game === 'zone-nova' ? 0x3498DB : 0x9B59B6)
+    .setFooter({ text: `${getGameDisplayName(game)} • gachawiki.info` });
 
-    if (section === 'redeem-codes') {
-      const codes = await dataFetcher.getRedeemCodes(game);
-      embed.setTitle('🎫 Redeem Codes')
-        .setDescription('Active redeem codes for free rewards!');
-      
-      if (codes && codes.length > 0) {
-        codes.slice(0, 10).forEach(code => {
-          embed.addFields({
-            name: `🎁 ${code.code || 'Code'}`,
-            value: `**Rewards:** ${code.rewards || 'Various rewards'}\n**Expires:** ${code.expiry || 'Unknown'}`,
-            inline: true
-          });
-        });
-      } else {
+  if (section === 'redeem-codes') {
+    const codes = gameData.redeemCodes;
+    embed.setTitle('🎫 Active Redeem Codes')
+      .setDescription('**Copy these codes in-game for free rewards!**');
+    
+    if (codes.length > 0) {
+      codes.forEach(code => {
         embed.addFields({
-          name: '📝 No Active Codes',
-          value: 'Check back later for new codes!',
-          inline: false
+          name: `\`${code.code}\``,
+          value: `🎁 **${code.rewards}**\n⏰ Expires: ${code.expiry}`,
+          inline: true
         });
-      }
-      
-    } else if (section === 'updates') {
-      const updates = await dataFetcher.getUpdates(game);
-      embed.setTitle('📰 Game Updates')
-        .setDescription('Latest game news and patches!');
-      
-      if (updates && updates.length > 0) {
-        updates.slice(0, 5).forEach((update, index) => {
-          embed.addFields({
-            name: `📅 ${update.title || `Update ${index + 1}`}`,
-            value: `${update.description || update.content || 'No description available'}\n**Date:** ${update.date || 'Unknown'}`,
-            inline: false
-          });
-        });
-      } else {
-        embed.addFields({
-          name: '📝 No Recent Updates',
-          value: 'Stay tuned for latest news!',
-          inline: false
-        });
-      }
-      
-    } else if (section === 'memories') {
-      const memories = await dataFetcher.getMemories(game);
-      embed.setTitle('💭 Memories')
-        .setDescription('Character memories and stories!');
-      
-      if (memories && memories.length > 0) {
-        memories.slice(0, 8).forEach(memory => {
-          embed.addFields({
-            name: `✨ ${memory.title || memory.name || 'Memory'}`,
-            value: `**Character:** ${memory.character || 'Unknown'}\n**Type:** ${memory.type || 'Story'}`,
-            inline: true
-          });
-        });
-      } else {
-        embed.addFields({
-          name: '📝 No Memories Found',
-          value: 'Memory data coming soon!',
-          inline: false
-        });
-      }
-      
-    } else if (section === 'rifts') {
-      const rifts = await dataFetcher.getRifts(game);
-      embed.setTitle('🌀 Rifts')
-        .setDescription('Rift challenges and strategies!');
-      
-      if (rifts && rifts.length > 0) {
-        rifts.slice(0, 8).forEach(rift => {
-          embed.addFields({
-            name: `⚔️ ${rift.name || rift.title || 'Rift'}`,
-            value: `**Difficulty:** ${rift.difficulty || 'Unknown'}\n**Rewards:** ${rift.rewards || 'Various'}`,
-            inline: true
-          });
-        });
-      } else {
-        embed.addFields({
-          name: '📝 No Rift Data',
-          value: 'Rift information coming soon!',
-          inline: false
-        });
-      }
-      
-    } else if (section === 'summon-faq') {
-      embed.setTitle('❓ Summon FAQ')
-        .setDescription('Common summoning questions and answers!')
-        .addFields(
-          {
-            name: '🎯 What are the summon rates?',
-            value: 'SSR: 3% | SR: 12% | R: 85%',
-            inline: false
-          },
-          {
-            name: '💎 How much does a 10-pull cost?',
-            value: 'Usually 1500-3000 gems depending on banner',
-            inline: false
-          },
-          {
-            name: '🎫 Is there a pity system?',
-            value: 'Yes! Most banners have guaranteed SSR after 90 pulls',
-            inline: false
-          }
-        );
-        
-    } else if (section === 'damage-mechanics') {
-      embed.setTitle('⚔️ Damage Mechanics')
-        .setDescription('Understanding damage calculations!')
-        .addFields(
-          {
-            name: '🗡️ Base Damage Formula',
-            value: 'Attack × Skill Multiplier × Element Bonus',
-            inline: false
-          },
-          {
-            name: '🔥 Element Advantages',
-            value: 'Fire > Wind > Earth > Water > Fire\nHoly ⟷ Chaos (mutual weakness)',
-            inline: false
-          },
-          {
-            name: '⭐ Critical Hits',
-            value: 'Base crit rate: 5% | Crit damage: 150%',
-            inline: false
-          }
-        );
-        
+      });
     } else {
-      embed.setTitle('📚 Coming Soon')
-        .setDescription(`The ${section} section is being developed. Check back soon!`)
-        .addFields({
-          name: '🔗 Visit Wiki',
-          value: `[Browse ${getGameDisplayName(game)} on GachaWiki](https://gachawiki.info/guides/${game})`,
-          inline: false
-        });
+      embed.addFields({
+        name: '📝 No Active Codes',
+        value: 'Check back later for new codes!\nCodes are usually released during events and maintenance.',
+        inline: false
+      });
     }
-
-    await interaction.editReply({ embeds: [embed], components: [] });
     
-  } catch (error) {
-    console.error('Error in handleOtherSections:', error);
-    const fallbackEmbed = new EmbedBuilder()
-      .setTitle('❌ Error Loading Data')
-      .setDescription('Could not load section data. Please try again later.')
-      .setColor(0xFF0000);
+    embed.addFields({
+      name: '📖 How to Redeem',
+      value: '1. Open the game\n2. Go to Settings > Redeem Code\n3. Enter the code exactly as shown\n4. Collect rewards from mailbox',
+      inline: false
+    });
     
-    await interaction.editReply({ embeds: [fallbackEmbed], components: [] });
+  } else if (section === 'updates') {
+    const updates = gameData.updates;
+    embed.setTitle('📰 Latest Updates')
+      .setDescription('**Recent patches and news for ' + getGameDisplayName(game) + '**');
+    
+    updates.forEach(update => {
+      embed.addFields({
+        name: `${update.version} - ${update.title}`,
+        value: `${update.description}\n**Released:** ${update.date}`,
+        inline: false
+      });
+    });
+    
+  } else if (section === 'memories') {
+    const memories = gameData.memories;
+    embed.setTitle('💭 Character Memories')
+      .setDescription('**Unlock character backstories and lore**');
+    
+    memories.forEach(memory => {
+      embed.addFields({
+        name: `✨ ${memory.title}`,
+        value: `**Character:** ${memory.character}\n**Unlock:** ${memory.requirement}\n**Chapters:** ${memory.chapters}`,
+        inline: true
+      });
+    });
+    
+    embed.addFields({
+      name: '🎯 Tips',
+      value: '• Memories unlock character development\n• Some memories affect gameplay stats\n• Complete all chapters for bonus rewards',
+      inline: false
+    });
+    
+  } else if (section === 'rifts') {
+    const rifts = gameData.rifts;
+    embed.setTitle('🌀 Dimensional Rifts')
+      .setDescription('**Challenge powerful enemies for rare rewards**');
+    
+    rifts.forEach(rift => {
+      embed.addFields({
+        name: `${rift.difficulty} ${rift.name}`,
+        value: `**Best Rewards:** ${rift.rewards}\n**Recommended Power:** ${rift.power}\n**Strategy:** ${rift.strategy}`,
+        inline: false
+      });
+    });
+    
+  } else if (section === 'summon-faq') {
+    const faq = gameData.summonFAQ;
+    embed.setTitle('❓ Summoning Guide')
+      .setDescription('**Everything you need to know about summoning**');
+    
+    faq.forEach(item => {
+      embed.addFields({
+        name: item.question,
+        value: item.answer,
+        inline: false
+      });
+    });
+    
+  } else if (section === 'damage-mechanics') {
+    const mechanics = gameData.damageMechanics;
+    embed.setTitle('⚔️ Combat Mechanics')
+      .setDescription('**Master the battle system**');
+    
+    embed.addFields(
+      {
+        name: '🗡️ Damage Formula',
+        value: mechanics.formula,
+        inline: false
+      },
+      {
+        name: '🔥 Element Wheel',
+        value: mechanics.elements,
+        inline: false
+      },
+      {
+        name: '⭐ Critical Hits',
+        value: mechanics.criticals,
+        inline: false
+      },
+      {
+        name: '🛡️ Defense Types',
+        value: mechanics.defense,
+        inline: false
+      }
+    );
+    
+  } else {
+    embed.setTitle('📚 Coming Soon')
+      .setDescription(`The ${section} section is being developed. Check back soon!`)
+      .addFields({
+        name: '🔗 Visit Full Wiki',
+        value: `[Browse ${getGameDisplayName(game)} guides](https://gachawiki.info/guides/${game})`,
+        inline: false
+      });
   }
+
+  await interaction.editReply({ embeds: [embed], components: [] });
+}
+
+function getGameContent(game) {
+  const content = {
+    'zone-nova': {
+      redeemCodes: [
+        { code: 'NOVA2024', rewards: '500 Gems + 10 Summon Tickets', expiry: 'Dec 31, 2024' },
+        { code: 'WELCOME100', rewards: '1000 Gems + Starter Pack', expiry: 'Permanent' },
+        { code: 'LAUNCH2024', rewards: '300 Gems + 5 Energy Potions', expiry: 'Jan 15, 2025' }
+      ],
+      updates: [
+        {
+          version: 'v2.1.0',
+          title: 'Winter Festival Update',
+          description: 'New winter-themed characters, events, and quality of life improvements. Limited-time snow maps and holiday rewards.',
+          date: 'Dec 15, 2024'
+        },
+        {
+          version: 'v2.0.5',
+          title: 'Balance Patch',
+          description: 'Character balance adjustments, bug fixes, and performance optimizations. Several SSR characters received buffs.',
+          date: 'Nov 28, 2024'
+        }
+      ],
+      memories: [
+        { title: 'Artemis: Hunter\'s Path', character: 'Artemis', requirement: 'Reach Bond Level 5', chapters: '3 Chapters' },
+        { title: 'Naiya: Ocean\'s Call', character: 'Naiya', requirement: 'Complete Chapter 3', chapters: '4 Chapters' },
+        { title: 'Kela: Sacred Duty', character: 'Kela', requirement: 'Reach Level 50', chapters: '3 Chapters' }
+      ],
+      rifts: [
+        {
+          name: 'Crimson Depths',
+          difficulty: '⭐⭐⭐',
+          rewards: 'Legendary Weapons, Red Crystals',
+          power: '25,000+',
+          strategy: 'Bring fire-resistant characters, focus on burst damage'
+        },
+        {
+          name: 'Frozen Sanctum',
+          difficulty: '⭐⭐⭐⭐',
+          rewards: 'Mythic Artifacts, Ice Essence',
+          power: '40,000+',
+          strategy: 'Use fire elements, avoid prolonged battles'
+        }
+      ],
+      summonFAQ: [
+        { question: '🎯 What are the summon rates?', answer: 'SSR: 2% | SR: 13% | R: 85%\nPity system guarantees SSR at 90 pulls' },
+        { question: '💎 How much does summoning cost?', answer: '1 Pull: 300 gems\n10 Pull: 2700 gems (10% discount)\nDaily discount: First pull 150 gems' },
+        { question: '🎫 Should I save for limited banners?', answer: 'Yes! Limited characters are often stronger and cannot be obtained later. Save 27,000 gems for guaranteed limited character.' },
+        { question: '🔄 What\'s the best summoning strategy?', answer: 'Always do 10-pulls for the bonus. Focus on one banner at a time. Use singles only when close to pity.' }
+      ],
+      damageMechanics: {
+        formula: 'Final Damage = (ATK × Skill Multiplier × Element Bonus × Crit Multiplier) - Enemy DEF',
+        elements: 'Fire > Wind > Earth > Water > Fire\nHoly ⟷ Chaos (mutual 50% bonus)\nAdvantage gives 30% damage bonus',
+        criticals: 'Base Crit Rate: 5%\nBase Crit Damage: 200%\nMax Crit Rate: 100% (with gear)',
+        defense: 'Physical DEF reduces physical damage\nMagical DEF reduces magical damage\nPenetration ignores % of enemy defense'
+      }
+    },
+    'silver-and-blood': {
+      redeemCodes: [
+        { code: 'BLOOD2024', rewards: '800 Blood Crystals + Equipment', expiry: 'Dec 31, 2024' },
+        { code: 'SILVER100', rewards: '1200 Silver Coins + Weapons', expiry: 'Permanent' }
+      ],
+      updates: [
+        {
+          version: 'v1.8.0',
+          title: 'Bloodmoon Rising',
+          description: 'New vampire-themed faction, dark magic system, and PvP improvements. Night raids and blood pact mechanics.',
+          date: 'Dec 10, 2024'
+        }
+      ],
+      memories: [
+        { title: 'Vlad: Ancient Bloodline', character: 'Vlad', requirement: 'Complete Blood Ritual', chapters: '5 Chapters' },
+        { title: 'Luna: Silver Moon', character: 'Luna', requirement: 'Reach Rank S', chapters: '4 Chapters' }
+      ],
+      rifts: [
+        {
+          name: 'Crimson Cathedral',
+          difficulty: '⭐⭐⭐⭐⭐',
+          rewards: 'Ancient Artifacts, Blood Essence',
+          power: '60,000+',
+          strategy: 'Bring holy damage dealers, avoid vampire abilities'
+        }
+      ],
+      summonFAQ: [
+        { question: '🎯 What are the summon rates?', answer: 'Legendary: 1.5% | Epic: 15% | Rare: 83.5%\nSpark system at 200 pulls' },
+        { question: '💎 What currency is used?', answer: 'Blood Crystals for premium summons\nSilver Coins for equipment summons' },
+        { question: '🌙 When do rates increase?', answer: 'During Blood Moon events (monthly)\nRates double for vampire faction characters' }
+      ],
+      damageMechanics: {
+        formula: 'Damage = (Base ATK + Weapon ATK) × Skill % × Blood Bonus × Class Modifier',
+        elements: 'Silver > Undead > Dark > Blood > Silver\nHoly damage is super effective vs all dark types',
+        criticals: 'Crit Rate scales with Agility\nVampires gain crit from enemy missing health',
+        defense: 'Armor reduces physical damage\nWard reduces magical damage\nBlood Shield absorbs specific damage types'
+      }
+    }
+  };
+  
+  return content[game] || content['zone-nova'];
 }
 
 export async function handleInteraction(interaction) {
