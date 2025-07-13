@@ -33,14 +33,34 @@ class DataFetcher {
 
   parseJSModule(jsContent) {
     try {
+      // Try to find simple array export first
       const exportMatch = jsContent.match(/export\s+const\s+\w+\s*=\s*(\[[\s\S]*?\]);/);
       if (exportMatch) {
         return JSON.parse(exportMatch[1].replace(/([{,]\s*)(\w+):/g, '$1"$2":'));
       }
       
+      // Try named export pattern
       const namedExportMatch = jsContent.match(/export\s*{\s*(\w+)[\s\S]*?};[\s\S]*?const\s+\1\s*=\s*(\[[\s\S]*?\]);/);
       if (namedExportMatch) {
         return JSON.parse(namedExportMatch[2].replace(/([{,]\s*)(\w+):/g, '$1"$2":'));
+      }
+
+      // Try to find characters array declaration (for Silver & Blood format)
+      const charactersMatch = jsContent.match(/const\s+characters\s*=\s*(\[[\s\S]*?\]);/);
+      if (charactersMatch) {
+        // Extract just the variable names and create simple objects
+        const charactersStr = charactersMatch[1];
+        const varNames = charactersStr.match(/\w+/g);
+        if (varNames) {
+          // Create simplified character objects from variable names
+          return varNames.map(name => ({
+            name: name.replace(/([A-Z])/g, ' $1').trim(),
+            id: name,
+            rarity: 'Unknown',
+            element: 'Unknown',
+            role: 'Unknown'
+          }));
+        }
       }
 
       throw new Error('Could not parse JavaScript module');
