@@ -304,7 +304,9 @@ export async function handleInteraction(interaction) {
     const game = customId.split(':')[1];
     await showSectionMenu(interaction, game);
   } else if (customId.startsWith('section:')) {
-    const [_, game, section] = customId.split(':');
+    // Handle select menu interaction
+    const game = customId.split(':')[1];
+    const section = interaction.values[0]; // Get selected value from select menu
     await showSectionActions(interaction, game, section);
   } else if (customId.startsWith('action:')) {
     const [_, game, section, action] = customId.split(':');
